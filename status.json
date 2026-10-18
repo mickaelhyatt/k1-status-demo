@@ -1,0 +1,114 @@
+{
+  "generatedAt": "2026-10-18T14:30:00Z",
+  "modules": [
+    {
+      "moduleId": "core-finance",
+      "asAt": "2026-10-18T14:28:12Z",
+      "figure": {
+        "key": "cash_position",
+        "value": 142380,
+        "unit": "$",
+        "label": "Cash Position"
+      },
+      "attention": [
+        {
+          "id": "fin-001",
+          "summary": "Bank reconciliation overdue by 3 days",
+          "severity": 2,
+          "href": "#/core-finance/reconciliation"
+        },
+        {
+          "id": "fin-002",
+          "summary": "Q3 close checklist incomplete",
+          "severity": 3,
+          "href": "#/core-finance/close"
+        }
+      ]
+    },
+    {
+      "moduleId": "core-cashflow",
+      "asAt": "2026-10-18T14:25:00Z",
+      "figure": {
+        "key": "ar_overdue",
+        "value": null,
+        "unit": "$",
+        "label": "AR Overdue"
+      },
+      "attention": [
+        {
+          "id": "cf-001",
+          "summary": "AR sync failed - retry required",
+          "severity": 1,
+          "href": "#/core-cashflow/sync"
+        }
+      ]
+    },
+    {
+      "moduleId": "core-pipeline",
+      "asAt": "2026-10-18T14:20:00Z",
+      "figure": {
+        "key": "pipeline",
+        "value": 2847000,
+        "unit": "$",
+        "label": "Pipeline"
+      },
+      "attention": [
+        {
+          "id": "pipe-001",
+          "summary": "Deal ACME-4521 stale for 14 days",
+          "severity": 2,
+          "href": "#/core-pipeline/deals/4521"
+        },
+        {
+          "id": "pipe-002",
+          "summary": "Stage conversion rate dropped 12%",
+          "severity": 2,
+          "href": "#/core-pipeline/analytics"
+        },
+        {
+          "id": "pipe-003",
+          "summary": "Forecast variance exceeds threshold",
+          "severity": 3,
+          "href": "#/core-pipeline/forecast"
+        },
+        {
+          "id": "pipe-004",
+          "summary": "3 deals missing close dates",
+          "severity": 3,
+          "href": "#/core-pipeline/deals"
+        },
+        {
+          "id": "pipe-005",
+          "summary": "Quota attainment below 60%",
+          "severity": 2,
+          "href": "#/core-pipeline/quota"
+        },
+        {
+          "id": "pipe-006",
+          "summary": "Lead scoring model needs retraining",
+          "severity": 3,
+          "href": "#/core-pipeline/scoring"
+        },
+        {
+          "id": "pipe-007",
+          "summary": "Integration sync pending approval",
+          "severity": 3,
+          "href": "#/core-pipeline/integrations"
+        }
+      ]
+    },
+    {
+      "moduleId": "core-marketing",
+      "asAt": "2026-10-18T14:15:00Z",
+      "attention": [
+        {
+          "id": "mkt-001",
+          "summary": "Campaign approvals waiting",
+          "severity": 3,
+          "href": "#/core-marketing/campaigns",
+          "count": 4
+        }
+      ]
+    }
+  ]
+}

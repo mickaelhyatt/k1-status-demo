@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>core-pipeline Module</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #fef3c7;
+  padding: 16px;
+  line-height: 1.5;
+}
+.module-badge {
+  display: inline-block;
+  background: #d97706;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+.current-figure {
+  font-size: 0.875rem;
+  color: #333;
+  margin-bottom: 16px;
+}
+.current-figure strong {
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+}
+.controls { display: flex; gap: 8px; flex-wrap: wrap; }
+button {
+  background: #d97706;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+button:hover { background: #b45309; }
+button.danger {
+  background: #dc2626;
+}
+button.danger:hover { background: #b91c1c; }
+.log {
+  margin-top: 16px;
+  font-size: 0.75rem;
+  color: #666;
+  font-family: "SF Mono", Consolas, monospace;
+}
+</style>
+</head>
+<body>
+<div class="module-badge">core-pipeline</div>
+<div class="current-figure">
+  Current Pipeline: <strong id="value">$3.2M</strong>
+</div>
+<div class="controls">
+  <button onclick="sendUpdate()">Change my figure</button>
+  <button class="danger" onclick="tryHijack()">Try to write cash_position</button>
+</div>
+<div class="log" id="log"></div>
+
+<script>
+let currentValue = 3200000;
+
+function log(msg) {
+  document.getElementById('log').innerHTML += msg + '<br>';
+}
+
+function formatM(v) {
+  return '$' + (v / 1000000).toFixed(1) + 'M';
+}
+
+function sendStatus(value) {
+  const payload = {
+    moduleId: 'core-pipeline',
+    asAt: new Date().toISOString(),
+    figure: {
+      key: 'pipeline',
+      value: value,
+      unit: '$',
+      label: 'Pipeline'
+    },
+    attention: [
+      { id: 'pipe-001', summary: 'Deal ACME-4521 stale for 14 days', severity: 2, href: '#' },
+      { id: 'pipe-002', summary: 'Stage conversion rate dropped 12%', severity: 2, href: '#' }
+    ]
+  };
+
+  window.parent.postMessage({ type: 'K1_STATUS', payload }, '*');
+  log(`Sent: pipeline = ${formatM(value)}`);
+}
+
+function sendUpdate() {
+  currentValue += Math.floor(Math.random() * 500000) - 200000;
+  if (currentValue < 1000000) currentValue = 1000000;
+  document.getElementById('value').textContent = formatM(currentValue);
+  sendStatus(currentValue);
+}
+
+function tryHijack() {
+  const payload = {
+    moduleId: 'core-pipeline',
+    asAt: new Date().toISOString(),
+    figure: {
+      key: 'cash_position',
+      value: 999999,
+      unit: '$',
+      label: 'Cash Position'
+    },
+    attention: []
+  };
+
+  window.parent.postMessage({ type: 'K1_STATUS', payload }, '*');
+  log('Attempted to write cash_position (should be IGNORED by shell)');
+}
+
+sendStatus(currentValue);
+log('Module loaded — sent initial status to shell');
+</script>
+</body>
+</html>

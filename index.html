@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<!-- PERSISTENCE BOUNDARY: Theme choice may persist to localStorage. Business figures MUST NOT —
+     persisting figures makes the shell a data layer, which it is not. Figures are owned by modules. -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K1 Status Shell Demo</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --text: #1a1a1a;
+  --text-muted: #666666;
+  --border: #e0e0e0;
+  --accent: #0066cc;
+  --sev1: #dc2626;
+  --sev2: #d97706;
+  --sev3: #6b7280;
+  --stale: #9ca3af;
+  --live: #059669;
+}
+[data-theme="dark"] {
+  --bg: #1a1a1a;
+  --bg-secondary: #262626;
+  --text: #f5f5f5;
+  --text-muted: #a0a0a0;
+  --border: #404040;
+  --accent: #60a5fa;
+  --sev1: #ef4444;
+  --sev2: #f59e0b;
+  --sev3: #9ca3af;
+  --stale: #6b7280;
+  --live: #10b981;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  padding: 20px;
+  transition: background 0.2s, color 0.2s;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+h1 { font-size: 1.25rem; font-weight: 600; }
+.theme-toggle {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+.strip {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+.figure-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  min-width: 160px;
+  position: relative;
+}
+.figure-card.live { border-left: 3px solid var(--live); }
+.figure-card.stale { border-left: 3px solid var(--stale); }
+.figure-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+.figure-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.figure-value.null { color: var(--text-muted); }
+.figure-owner {
+  font-size: 0.625rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+.figure-status {
+  font-size: 0.625rem;
+  margin-top: 4px;
+}
+.figure-status.stale { color: var(--stale); }
+.figure-status.live { color: var(--live); font-weight: 500; }
+.queue-section { margin-bottom: 32px; }
+.queue-section h2 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-muted);
+}
+.queue-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.queue-item:hover { border-color: var(--accent); }
+.sev-badge {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.sev-badge.sev1 { background: var(--sev1); }
+.sev-badge.sev2 { background: var(--sev2); }
+.sev-badge.sev3 { background: var(--sev3); }
+.queue-summary { flex: 1; }
+.queue-module {
+  font-size: 0.625rem;
+  color: var(--text-muted);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.count-badge {
+  background: var(--accent);
+  color: white;
+  font-size: 0.625rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: 8px;
+}
+.more-link {
+  font-size: 0.75rem;
+  color: var(--accent);
+  margin-top: 4px;
+  padding-left: 20px;
+}
+.log-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 24px;
+}
+.log-section h3 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.log-entries {
+  font-family: "SF Mono", Consolas, monospace;
+  font-size: 0.75rem;
+  max-height: 150px;
+  overflow-y: auto;
+}
+.log-entry { padding: 4px 0; border-bottom: 1px solid var(--border); }
+.log-entry:last-child { border-bottom: none; }
+.log-time { color: var(--text-muted); }
+.log-ignored { color: var(--sev1); }
+.module-frame {
+  width: 100%;
+  height: 200px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-top: 24px;
+}
+.frame-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.frame-btn {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+.frame-btn.active { border-color: var(--accent); background: var(--accent); color: white; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>Kurateq One — Status Strip Demo</h1>
+  <button class="theme-toggle" onclick="toggleTheme()">Toggle Theme</button>
+</div>
+
+<div class="strip" id="strip"></div>
+
+<div class="queue-section">
+  <h2>Work Queue</h2>
+  <div id="queue"></div>
+</div>
+
+<div class="log-section">
+  <h3>Message Log</h3>
+  <div class="log-entries" id="log"></div>
+</div>
+
+<div class="frame-controls">
+  <button class="frame-btn" onclick="loadModule('module-finance.html')">Load core-finance</button>
+  <button class="frame-btn" onclick="loadModule('module-pipeline.html')">Load core-pipeline</button>
+  <button class="frame-btn" onclick="loadModule(null)">Close Module</button>
+</div>
+<iframe id="moduleFrame" class="module-frame" style="display:none;"></iframe>
+
+<script>
+const SLOT_OWNERS = {
+  cash_position: 'core-finance',
+  ar_overdue: 'core-cashflow',
+  pipeline: 'core-pipeline'
+};
+const ATTENTION_CAP = 5;
+
+let snapshot = null;
+let liveState = {};
+let buildTime = null;
+
+function log(msg, ignored = false) {
+  const el = document.getElementById('log');
+  const time = new Date().toLocaleTimeString();
+  const cls = ignored ? 'log-ignored' : '';
+  el.innerHTML = `<div class="log-entry ${cls}"><span class="log-time">${time}</span> ${msg}</div>` + el.innerHTML;
+}
+
+function formatValue(figure) {
+  if (!figure) return null;
+  if (figure.value === null) return '—';
+  const v = figure.value;
+  if (v >= 1000000) return figure.unit + (v / 1000000).toFixed(1) + 'M';
+  if (v >= 1000) return figure.unit + v.toLocaleString();
+  return figure.unit + v;
+}
+
+function formatTime(iso) {
+  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function renderStrip() {
+  const el = document.getElementById('strip');
+  el.innerHTML = '';
+
+  for (const [slot, owner] of Object.entries(SLOT_OWNERS)) {
+    const live = liveState[owner];
+    const snapMod = snapshot.modules.find(m => m.moduleId === owner);
+
+    let figure, asAt, isLive;
+    if (live && live.figure && live.figure.key === slot) {
+      figure = live.figure;
+      asAt = live.asAt;
+      isLive = true;
+    } else if (snapMod && snapMod.figure && snapMod.figure.key === slot) {
+      figure = snapMod.figure;
+      asAt = snapMod.asAt;
+      isLive = false;
+    } else {
+      continue;
+    }
+
+    const val = formatValue(figure);
+    const valClass = figure.value === null ? 'null' : '';
+    const cardClass = isLive ? 'live' : 'stale';
+    const statusClass = isLive ? 'live' : 'stale';
+    const statusText = isLive ? `Live — ${formatTime(asAt)}` : `As of build — ${formatTime(buildTime)}`;
+
+    el.innerHTML += `
+      <div class="figure-card ${cardClass}">
+        <div class="figure-label">${figure.label}</div>
+        <div class="figure-value ${valClass}">${val}</div>
+        <div class="figure-owner">${owner}</div>
+        <div class="figure-status ${statusClass}">${statusText}</div>
+      </div>
+    `;
+  }
+}
+
+function renderQueue() {
+  const el = document.getElementById('queue');
+  el.innerHTML = '';
+
+  const allItems = [];
+  const moduleCounts = {};
+
+  for (const mod of snapshot.modules) {
+    const live = liveState[mod.moduleId];
+    const attention = live ? live.attention : mod.attention;
+    if (!attention) continue;
+
+    moduleCounts[mod.moduleId] = attention.length;
+
+    for (let i = 0; i < attention.length; i++) {
+      allItems.push({
+        ...attention[i],
+        moduleId: mod.moduleId,
+        index: i
+      });
+    }
+  }
+
+  allItems.sort((a, b) => a.severity - b.severity);
+
+  const shown = {};
+  const overflow = {};
+
+  for (const item of allItems) {
+    shown[item.moduleId] = shown[item.moduleId] || 0;
+    if (shown[item.moduleId] >= ATTENTION_CAP) {
+      overflow[item.moduleId] = (overflow[item.moduleId] || 0) + 1;
+      continue;
+    }
+    shown[item.moduleId]++;
+
+    const countBadge = item.count ? `<span class="count-badge">${item.count}</span>` : '';
+
+    el.innerHTML += `
+      <div class="queue-item" onclick="location.href='${item.href}'">
+        <span class="sev-badge sev${item.severity}"></span>
+        <span class="queue-summary">${item.summary}${countBadge}</span>
+        <span class="queue-module">${item.moduleId}</span>
+      </div>
+    `;
+  }
+
+  for (const [moduleId, count] of Object.entries(overflow)) {
+    el.innerHTML += `<div class="more-link">+${count} more from ${moduleId}</div>`;
+  }
+}
+
+function handleMessage(event) {
+  const data = event.data;
+  if (!data || data.type !== 'K1_STATUS') return;
+
+  const payload = data.payload;
+  if (!payload || !payload.moduleId) {
+    log('INVALID: missing moduleId');
+    return;
+  }
+
+  if (payload.figure && payload.figure.key) {
+    const expectedOwner = SLOT_OWNERS[payload.figure.key];
+    if (expectedOwner && expectedOwner !== payload.moduleId) {
+      log(`IGNORED: ${payload.moduleId} tried to write ${payload.figure.key} (owned by ${expectedOwner})`, true);
+      return;
+    }
+  }
+
+  const prev = liveState[payload.moduleId];
+  const action = prev ? 'updated' : 'added';
+  liveState[payload.moduleId] = payload;
+
+  const figureInfo = payload.figure ? ` figure=${formatValue(payload.figure)}` : '';
+  const attentionInfo = payload.attention ? ` attention=${payload.attention.length}` : '';
+  log(`${action}: ${payload.moduleId}${figureInfo}${attentionInfo}`);
+
+  renderStrip();
+  renderQueue();
+}
+
+function loadModule(src) {
+  const frame = document.getElementById('moduleFrame');
+  if (src) {
+    frame.src = src;
+    frame.style.display = 'block';
+    log(`Loaded module: ${src}`);
+  } else {
+    frame.src = '';
+    frame.style.display = 'none';
+    log('Module frame closed');
+  }
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('k1-theme', next);
+}
+
+async function init() {
+  const saved = localStorage.getItem('k1-theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+
+  const res = await fetch('status.json');
+  snapshot = await res.json();
+  buildTime = snapshot.generatedAt;
+
+  log(`Loaded snapshot from ${formatTime(buildTime)} with ${snapshot.modules.length} modules`);
+
+  renderStrip();
+  renderQueue();
+
+  window.addEventListener('message', handleMessage);
+}
+
+init();
+</script>
+</body>
+</html>
